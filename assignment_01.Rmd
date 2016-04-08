@@ -6,7 +6,7 @@ title: "POLS 503, Spring 2016: Assignment 1"
 
 ### Problem 1: Data Wrangling and Viz Refresher
 
-The file [democracy.csv](https://raw.githubusercontent.com/POLS503/pols_503_sp15/master/data/democracy.csv) contains data from Przeworski et. al, *Demoracy and Deveolpment: Political Institutions and Well-Being in the Worlds, 1950-1990* [^1].
+The file [democracy.csv](https://raw.githubusercontent.com/POLS503/pols_503_sp15/master/data/democracy.csv) contains data from Przeworski et. al, *Democracy and Deveolpment: Political Institutions and Well-Being in the Worlds, 1950-1990* [^1].
 The data have been slightly recoded, to make higher values indicate higher levels of political liberty and democracy.
 
 | Variable | Description                      |
@@ -130,19 +130,43 @@ sprinters <- read.csv("sprinters.csv")
 ```
 
 a. The referenced paper only used data from the Olympics 2004 and before. Create a new dataset named `sprinters_orig` with only those observations.
+```{r, eval = FALSE}
+sprinters_orig <- sprinters[sprinters$year < 2005, ]
+```
+
 b. Run the regressions
     ```{r, eval = FALSE}
+library("dplyr")
     lm(time ~ year + women, data = sprinters_orig)
     lm(time ~ year * women, data = sprinters_orig)
     lm(time ~ year, data = filter(sprinters_orig, women == 1))
-    lm(time ~ year, data = filter(sprinters_orig, women == 0))
+     lm(time ~ year, data = filter(sprinters_orig, women == 0))
     ```
     Interpret each regression. How are they similar or different in their 
     slopes?
   
+b1. Year + women results in an intercept of 34 and a very slight negative slope (-0.012)
+b2. Year * women results in an intercept of 31.2 and a negative slope of -.01
+b3. Intercept of 31.2, slope of -0.02
+b4. Intercept of 42.4, slope of -0.02
+    Each of the regressions have very similar slopes, all of which are negative and hover around -0.012.
+    The intercept grows steadily larger for each regression. For each year that progresses, the average time     (seconds) goes down by 0.012 units.
+ 
+  
 c. Plot the results of these regressions.
-d. Use the function `predict` to predict the times of men and women in the 2156 Olympics. Is this plausible? 
+```{r, eval = FALSE}
+    library("ggplot2")
+lr1 <- plot(lm(time ~ year + women, data = sprinters_orig))
+lr2 <- plot(lm(time ~ year * women, data = sprinters_orig))
+lr3 <- plot(lm(time ~ year, data = sprinters_orig, women == 0))
+lr4 <- plot(lm(time ~ year, data = sprinters_orig, women == 1))
+```
 
+d. Use the function `predict` to predict the times of men and women in the 2156 Olympics. Is this plausible? 
+```{r, eval = FALSE}
+    library("ggplot2")
+prediction <- 
+```
 
 [^1]: Przeworski, Adam, Michael E. Alvarez, Jose Antonio Cheibub, and Fernando Limongi. 2000. *Democracy and Development: Political Institutions and Well-Being in the World, 1950-1990*. Cambridge University Press.
 [^anscombe]: These data are from: Anscombe, F. J. (1973). "Graphs in Statistical Analysis". *American Statistician* 27 (1): 17–21.
