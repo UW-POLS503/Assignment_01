@@ -1,0 +1,30 @@
+---
+title: "Assignment1Solutions"
+author: "Steve O"
+date: "April 7, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+sprinters <- read.csv("sprinters.csv")
+#a
+library(dplyr)  
+sprinters_orig <- sprinters %>% filter(year < 2004)  
+lm1 <- lm(time ~ year + women, data = sprinters_orig)  
+lm2 <- lm(time ~ year * women, data = sprinters_orig)  
+lm3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))  
+lm4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0))  
+
+lm1 shows that as time goes on (year increases), the sprint times have gone down overall. Also
+women were approximately 1 second slower than men in their times.  
+lm2 shows, like lm1, that as year increases, the sprint times descrease. Also, when accounting for
+the fact that year and women are correlated, it seems that women are 11 seconds slower than men in
+their sprint times.  
+lm3 shows the regression coefficients for sprint times in terms of year for women only. Women times are decreasing by 0.01584 per year.  
+lm4 shows the regression coefficients for sprint times in terms of year for men only. Men's times
+are decreasing  by -0.1068. Since the women's times are decreasing at a faster rate, they could, in time, become less than men's times, i.e. run faster than men. I don't think it is fair to extrapolate so far into the future though.  
