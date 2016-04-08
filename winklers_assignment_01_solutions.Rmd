@@ -1,0 +1,63 @@
+---
+title: "winklers_assignment_01_solutions"
+author: "Stephen Winkler"
+date: "April 7, 2016"
+output: html_document
+---
+
+## Problem 3: Predicting Sprint Times
+
+In a 2004 paper in *Nature*, Tatem et al. estimate the trend lines of sprint times for men and women using the winning times of the 100-meters in the Olympics.[^sprint1] They report that using current trends, in the 2156 Olympics, the women's 100-meter will have a faster time.[^sprint2]
+
+The file 
+
+| Variable | Description |
+|:---|:---|
+| `year` | Year of the Olympics or World Championships |
+| `time` | Winning time |
+| `women` | 1 if women's race; 0 if men's race |
+| `olympics` | 1 if in the olympics; 0 if in the World Championships |
+
+Load the data into R,
+```{r, eval = FALSE}
+sprinters <- read.csv("sprinters.csv")
+```
+
+a. The referenced paper only used data from the Olympics 2004 and before. Create a new dataset named `sprinters_orig` with only those observations.
+```{r}
+library(dplyr)
+sprinters_orig <- filter(sprinters, year < 2005) 
+
+```
+
+
+b. Run the regressions
+    ```{r, eval = FALSE}
+   reg1 <- lm(time ~ year + women, data = sprinters_orig)
+  reg2 <-  lm(time ~ year * women, data = sprinters_orig)
+   reg3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))
+   reg4 <-  lm(time ~ year, data = filter(sprinters_orig, women == 0))
+    ```
+    Interpret each regression. How are they similar or different in their slopes?
+  Regression 1: For every year, women's time decreases by .01. (when women and year are considered independently) 
+  Regression 2: For every year, women's time decreases by .01. (when women & year are considered as correlated?)
+  Regression 3: For every year, women's time decreases by .016. 
+  Regression 4: For every year, men's time decreases by .011.
+  
+c. Plot the results of these regressions.
+```{r}
+library("tidyr")
+library("dplyr")
+tidy(reg1)
+
+```
+
+
+d. Use the function `predict` to predict the times of men and women in the 2156 Olympics. Is this plausible? 
+
+
+[^1]: Przeworski, Adam, Michael E. Alvarez, Jose Antonio Cheibub, and Fernando Limongi. 2000. *Democracy and Development: Political Institutions and Well-Being in the World, 1950-1990*. Cambridge University Press.
+[^anscombe]: These data are from: Anscombe, F. J. (1973). "Graphs in Statistical Analysis". *American Statistician* 27 (1): 17–21.
+[^sprint1]: ndrew J. Tatem, Carlos A. Guerra, Peter M. Atkinson & Simon I. Hay. 2004. "Athletics:  Momentous sprint at the 2156 Olympics?" *Nature.* <https://dx.doi.org/10.1038/431525>
+[^sprint2]: I've read the short article several times. I still can't tell whether it is tongue in cheek.
+
