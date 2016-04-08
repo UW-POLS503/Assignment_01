@@ -1,0 +1,75 @@
+---
+title: "assignment_01"
+author: "Wesley Zuidema"
+date: "April 7, 2016"
+output: pdf_document
+---
+```{r}
+library(dplyr)
+library(ggplot2)
+library(broom)
+```
+
+
+Problem 3
+
+Load data frame
+
+```{r}
+sprinters <- read.csv("sprinters.csv")
+```
+
+a. The referenced paper only used data from the Olympics 2004 and before. Create a new dataset named sprinters_orig with only those observations.
+
+```{r}
+sprinters_orig <- filter(sprinters, year <= 2004)
+```
+
+b. Run the regressions
+
+```{r}
+reg_1 <- lm(time ~ year + women, data = sprinters_orig)
+reg_2 <- lm(time ~ year * women, data = sprinters_orig)
+reg_3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))
+reg_4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0))
+```
+
+The last two regresssions regress times on the year for men and women separately, with the slope of each telling us how the time changes for men and women each year over time. Times for each gender get smaller year on year. The first regression regresses time on year and women, with coefficients indicated the relationship between year and gender. Each year lowers the average time, while moving from man to woman increases the average time.
+I am not sure how to interpret the cross in the second regression, but the coefficients match those of the regressions that filters only male runners, so my guess is that this regression separates out the effect of the year on the female category.
+
+c. Plot the results of these regressions.
+
+```{r}
+# Augment regressions
+reg_1 <- augment(reg_1)
+reg_2 <- augment(reg_2)
+reg_3 <- augment(reg_3)
+reg_4 <- augment(reg_4)
+
+# Plot regression lines
+ggplot(reg_1, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted)) +
+  facet_grid(~ women)
+
+ggplot(reg_2, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted))
+
+ggplot(reg_3, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted))
+
+ggplot(reg_4, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted))
+```
+
+d. Use the function predict to predict the times of men and women in the 2156 Olympics. Is this plausible?
+
+```{r}
+years <- c(2156)
+coef(reg_1)['(Intercept)'] + coef(reg_1)['year'] * years
+predict(reg_1, newdata = data.frame(year = years))
+```
+
