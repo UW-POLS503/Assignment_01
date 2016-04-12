@@ -1,5 +1,5 @@
 ---
-title: "assignment_01"
+title: "assignment_01 solutions"
 author: "Wesley Zuidema"
 date: "April 7, 2016"
 output: pdf_document
