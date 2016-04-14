@@ -1,0 +1,277 @@
+---
+title: "assignment_01 solutions"
+author: "Wesley Zuidema"
+date: "April 7, 2016"
+output: pdf_document
+---
+```{r echo = F, warning = F, message = F}
+library(dplyr)
+library(ggplot2)
+library(broom)
+library(tidyr)
+library(texreg)
+library(knitr)
+```
+
+Problem 1
+
+```{r echo = F, warning = F, message = F}
+democracy <- read.csv(file = "democracy.csv", stringsAsFactors = FALSE, na.strings = ".")
+```
+
+a. Create a data frame with statistics (minimum, mean, sd, and maximum) for all variables but COUNTRY, CTYNAME, REGION, and YEAR.
+
+```{r warning = F, message = F, tidy = T, results = 'asis'}
+dem_by_variable <- 
+  democracy %>%
+  gather(variable, value, -COUNTRY, -CTYNAME, -REGION, -YEAR)
+
+dem_summary_stats <-
+  dem_by_variable %>% 
+  group_by(variable) %>%
+  summarize(minimum = min(value, na.rm = T), 
+            mean = mean(value, na.rm = T), 
+            sd = sd(value, na.rm = T), 
+            maximum = max(value, na.rm = T)) %>%
+  gather(stat, value, -variable) %>%
+  ungroup() %>%
+  spread(stat, value)
+
+kable(dem_summary_stats)
+```
+
+d. Create a histogram for political liberties in which each unique value of the variable is in its own bin.
+
+```{r warning = F, message = F, tidy = T}
+ggplot(democracy, aes(x = POLLIB)) + geom_histogram(binwidth = 1)
+```
+
+e. Create a histogram for GDP per capita.
+
+```{r warning = F, message = F, tidy = T}
+ggplot(democracy, aes(GDPW)) + geom_histogram()
+```
+
+
+f. Create a histogram for log GDP per capita. How is this histogram different than the one for GDP per capita when it was not logged.
+
+```{r warning = F, message = F, tidy = T}
+ggplot(democracy, aes(log(GDPW))) + geom_histogram()
+```
+
+The distribution here is far more normal, as opposed to the Poisson appearance of the distribution of the values themselves
+
+g. Plot political liberties against GDP per capita. If you use a scatterplot, there will be overlap. Figure out a way to plot these two variables so that the pattern (if any) between them is clear. There could be multiple ways to do this, and not necessarily a scatterplot.
+
+```{r warning = F, message = F, tidy = T}
+ggplot(democracy, aes(GDPW, POLLIB)) + geom_jitter()
+```
+
+
+i. Plot political liberties against log GDP per capita, using the same method as the previous question. How is the relationship different than when GDP per capita was not logged?
+
+```{r warning = F, message = F, tidy = T}
+ggplot(democracy, aes(log(GDPW), POLLIB)) + geom_jitter()
+```
+
+The graph makes it clear that the largest percentage differences between GDP per capita account are related to the highest POLLIB score
+
+j. Create a boxplot of GDP per capita for oil producing and non-oil producing nations. Use ggplot2. This should be one plot, not two separate plots.
+
+```{r warning = F, message = F, tidy = T}
+ggplot(democracy, aes(x = OIL, y = GDPW)) + geom_boxplot(aes(group = cut_width(OIL, 1)))
+```
+
+
+k. Calculate the mean GDP per capita in countries with at least 40 percent Catholics. How does it compare to mean GDP per capita for all countries? Remember to check the units of Catholic.
+
+```{r warning = F, message = F, tidy = T}
+democracy %>%
+  filter(CATH >= 40) %>%
+  summarize(mean_GDPW = mean(GDPW))
+democracy %>%
+  filter(CATH <= 40) %>%
+  summarize(mean_GDPW = mean(GDPW))
+```
+
+Mean GDPW for Catholic countries is a little over 2000 higher than non-Catholic
+
+l. Calculate the average GDP per capita in countries with greater than 60% ethnolinguistic fractionalization, less than 60%, and missing ethnolinguistic fractionalization. Hint: you can calculate this with the dplyr verbs: mutate, group_by and summarize.
+
+```{r warning = F, message = F, tidy = T}
+democracy %>%
+  mutate(ethnic_frac = ifelse(ELF60 > .6, "high", "low")) %>%
+  group_by(ethnic_frac) %>%
+  summarize(GDPW_mean = mean(GDPW, na.rm = T))
+```
+
+
+m. For all years, calculate the median of the country average years of education all countries? Return this as a data-frame. Hint: use dplyr functions: group_by, filter, summarize. Plot the median of the years of education for all years using a line. Also show the original data.
+
+```{r warning = F, message = F, tidy = T}
+education_summary <- 
+  democracy %>%
+  group_by(YEAR) %>%
+  summarize(median_EDT = median(EDT, na.rm = T))
+education_summary
+
+ggplot(education_summary, aes(x = YEAR, y = median_EDT)) + geom_line(col = "red") + geom_point(data = democracy, aes(x = YEAR, y = EDT))
+```
+
+
+o. Repeat the previous question but group by both year and democracy. Plot separate lines for democracies and non-democries and the original data. Use color to differentiate democracies and non-democracies.
+
+```{r warning = F, message = F, tidy = T}
+education_summary_bydem <- 
+  democracy %>%
+  group_by(YEAR, REG) %>%
+  summarize(median_EDT = median(EDT, na.rm = T))
+education_summary_bydem
+
+ggplot(education_summary_bydem, aes(x = YEAR, y = median_EDT, col = REG)) + geom_line()
+```
+
+I can't figure out how to make ggplot connect the lines for its own group only, unless I facet it.
+
+n. Which country was (or countries were) closest to the median years of education in 1985 among all countries? Hint: use dplyr functions: filter, mutate, arrange, and slice.
+
+```{r warning = F, message = F, tidy = T}
+democracy %>%
+  filter(YEAR == 1985, !is.na(EDT)) %>%
+  arrange(EDT) %>%
+  slice(113/2)
+  
+```
+
+
+q. What were the 25th and 75th percentiles of ethnolinguistic fractionalization for new and old countries? Return this as a data frame with columns NEWC, ELF60_p25, and ELF60_p75. Print it as a nicely formatted table with kable.
+
+```{r warning = F, message = F, tidy = T}
+percentiles <- 
+  democracy %>%
+  group_by(NEWC) %>%
+  summarize(ELF60_p25 = quantile(ELF60, probs = .25, na.rm = T),
+            ELF60_p75 = quantile(ELF60, probs = .75, na.rm = T))
+
+kable(percentiles, format = "markdown")
+```
+
+
+
+Problem 2
+
+```{r echo = F, warning = F, message = F}
+data("anscombe")
+
+anscombe2 <- anscombe %>%
+    mutate(obs = row_number()) %>%
+    gather(variable_dataset, value, - obs) %>%
+    separate(variable_dataset, c("variable", "dataset"), sep = 1L) %>%
+    spread(variable, value) %>%
+    arrange(dataset, obs)
+```
+
+a. For each dataset: calculate the mean and standard deviations of x and y, and correlation between x and y, and run a linear regression between x and y for each dataset. How similar do you think that these datasets will look?
+
+```{r}
+anscombe2 %>%
+  group_by(dataset) %>%
+  summarize(mean_x = mean(x, na.rm = T),
+            mean_y = mean(y, na.rm = T),
+            corr_x_y = cor(x, y))
+```
+
+I do not expect these datasets to look similar except for their slope, since all correlation is on a scale of -1 to 1.
+
+b. Create a scatter plot of each dataset and its linear regression fit. Hint: you can do this easily with facet_wrap.
+
+```{r}
+ggplot(anscombe2, aes(x = x, y = y)) + geom_point() + geom_smooth(method = "lm") + facet_wrap(~ dataset)
+```
+
+
+Problem 3
+
+Load data frame
+
+```{r echo = F, warning = F, message = F}
+sprinters <- read.csv("sprinters.csv")
+```
+
+a. The referenced paper only used data from the Olympics 2004 and before. Create a new dataset named sprinters_orig with only those observations.
+
+```{r echo = F, warning = F, message = F}
+sprinters_orig <- filter(sprinters, year <= 2004, olympics == 1)
+```
+
+b. Run the regressions
+
+```{r echo = F, warning = F, message = F}
+reg_1 <- lm(time ~ year + women, data = sprinters_orig)
+reg_2 <- lm(time ~ year * women, data = sprinters_orig)
+reg_3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))
+reg_4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0))
+```
+
+The last two regresssions regress times on the year for men and women separately, with the slope of each telling us how the winning time changes for men and women each year over time. Times for each gender get smaller year on year. The first regression regresses time on year and women, with coefficients indicated the relationship between year and gender. Each year lowers the winning time, while moving from man to woman increases the time.
+I am not sure how to interpret the cross in the second regression, but the coefficients match those of the regressions that filters only male runners, so my guess is that this regression separates out the effect of the year on the female category.
+After discussing in class, I see that the coefficients in regression two are related to running regressions separately for men and women. My plots reflect the separate regression lines.
+
+c. Plot the results of these regressions.
+
+Plots produced by code
+
+d. Use the function predict to predict the times of men and women in the 2156 Olympics. Is this plausible?
+
+It doesn't seem to be possible based on the past, with men's times faster than women's based on physical differences. I would expect the slope for women to level out to equal the men's at some point.
+I can't figure out the predict command, it won't take my regression output as an object, and the help file is not helpful since it doesn't include an example.
+
+```{r echo = F, warning = F, message = F}
+# Augment regressions
+reg_1 <- augment(reg_1)
+reg_2 <- augment(reg_2)
+reg_3 <- augment(reg_3)
+reg_4 <- augment(reg_4)
+
+# Plot regression lines manually
+ggplot(reg_1, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted)) +
+  facet_grid(~ women)
+
+ggplot(reg_2, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted)) +
+  facet_grid(~ women)
+
+ggplot(reg_3, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted))
+
+ggplot(reg_4, aes(x = year)) +
+  geom_point(aes(y = time)) +
+  geom_line(aes(y = .fitted))
+
+years <- c(2156)
+coef(reg_1)['(Intercept)'] + coef(reg_1)['year'] * years
+predict(reg_2, newdata = data.frame(year = 2156, women = c(0, 1)))
+```
+
+d. Use the function predict to predict the times of men and women in the 2156 Olympics. Is this plausible?
+
+Men - 8.098
+Women - 8.079
+
+Seems implausible due to body type between sexes. I would expect the coeffient for women's times to level off before 2156 and parallel the men's coefficient.
+
+e. Calculate the square root of the mean of the squared residuals (root mean squared error or RMSE) for the regression time ~ year * women. Predict the values for the years after 2004 for both Olympics and World Championships. What are the root mean squared residuals for these predictions? Is it surprising that the RMSE for the predictions out of the sample are lower than those in the sample? 
+
+```{r}
+reg_5 <- lm(time ~ year * women, sprinters)
+reg_5aug <- augment(reg_5)
+sqrt(sum(reg_5aug$.resid, na.rm = T)^2)
+```
+
+It is not surprising that the MSE for our predictions is lower than the MSE for the regression line, because any values after 2004 have residuals of 0 because they were predicted by our regression line.
+
+I'm not sure how to actually calculate the MSE for our predictions, and I can't do any more at this point because I have become very sick.
