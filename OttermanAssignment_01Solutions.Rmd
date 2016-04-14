@@ -6,25 +6,260 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set()
 ```
 
-## R Markdown
+```{r warning = FALSE}
+library(dplyr)
+library(tidyr)
+library(magrittr)
+library(ggplot2)
+library(broom)
+library(texreg)
+```
 
+
+
+##1.
+**a)**
+```{r}
+democracy <- read.csv(file = "democracy.csv", stringsAsFactors = FALSE, na.strings = ".")
+```
+**b)**
+```{r}
+dem_by_variable <- democracy %>% 
+                   gather(variable, value, -COUNTRY, -YEAR, -REGION, -CTYNAME)
+
+dem_summary_stats <- dem_by_variable %>%
+                     group_by(variable, CTYNAME) %>%
+                     summarise(mean = mean(value),
+                               minimum = min(value), 
+                               maximum = max(value),
+                               standard_deviation = sd(value)) %>%
+                     gather(stat, value, -CTYNAME, -variable) %>%
+                     ungroup() %>%
+                     unite(variable_stat, variable, stat) %>%
+                     spread(variable_stat, value)
+```
+```{r, results='asis'}
+knitr::kable(dem_summary_stats)
+```
+
+**c)** no c
+
+**d)** 
+```{r}
+ggplot(democracy, aes(x = POLLIB)) + geom_histogram()
+```
+
+**e)**
+```{r}
+ggplot(democracy, aes(x = GDPW)) + geom_histogram()
+```
+
+**f)**
+```{r}
+ggplot(democracy, aes(x = log(GDPW))) + geom_histogram()
+```
+
+When GDP is not 'logged' it is skewed to the left; when GDP is 'logged' the histogram looks more symetrical.
+
+**g)**
+```{r}
+ggplot(democracy, aes(x = POLLIB, y = GDPW)) + geom_point(position = "jitter")
+```
+
+**h)** no h
+
+**i)**
+```{r}
+ggplot(democracy, aes(x = POLLIB, y = log(GDPW))) + geom_point(position = "jitter")
+```
+
+It seems that GDP and political liberty are less correlated when using log(GDP).
+
+**j)**
+```{r}
+ggplot(democracy, aes(x = as.factor(OIL), y = GDPW)) + geom_boxplot()
+```
+
+**k)**
+```{r}
+democracy %>% 
+  filter(CATH >= 40) %>% 
+  summarise(meanGDPcath = mean(GDPW))
+
+democracy %>% 
+summarise(meanGDP = mean(GDPW))
+```
+The mean GDP for Catholic countries is greater than the total mean GDP of all countries in the dataset.
+
+**l)** 
+```{r}
+democracy %>% 
+  filter(ELF60 > .6) %>% 
+  summarize(meanGDP60over = mean(GDPW))
+
+democracy %>% 
+  filter(ELF60 < .6) %>% 
+  summarize(meanGDP60under = mean(GDPW))
+
+democracy %>% 
+  filter(ELF60 = NA) %>% 
+  summarize(meanGDP60under = mean(GDPW))
+```
+
+**m)**
+```{r}
+MedEDT <- democracy %>% 
+            group_by(YEAR) %>% 
+            summarise(medianEDU = median(EDT, na.rm = TRUE))
+
+knitr::kable(MedEDT)
+
+ggplot(MedEDT, aes(x = YEAR, y = medianEDU)) + geom_line()
+``` 
+
+**o)**
+``` {r}
+MedEDT2 <- democracy %>% 
+             group_by(YEAR, REG) %>% 
+             summarise(medianEDU = median(EDT, na.rm = TRUE))
+
+ggplot(MedEDT2, aes(x = YEAR, y = medianEDU, color = as.factor(REG))) + geom_line()
+```
+
+**n)**
+``` {r}
+MedEDT3 <- democracy %>% 
+              group_by(YEAR, CTYNAME) %>% 
+              summarise(medianEDU = median(EDT, na.rm = TRUE)) %>%
+              filter(YEAR == "1985", !is.na(medianEDU)) %>% 
+              arrange(medianEDU) %>% 
+              summarise(med1985 = CTYNAME[length(medianEDU)/2])
+
+knitr::kable(MedEDT3)
+```
+
+**q)**
+```{r}
+elf <- democracy %>% 
+  group_by(NEWC) %>% 
+  summarise(ELF60_p25 = quantile(ELF60, na.rm = TRUE, probs = .25), 
+            ELF60_p75 = quantile(ELF60, na.rm = TRUE, probs = .75))
+
+knitr::kable(elf)
+```
+
+#2.
+```{r}
+data("anscombe")
+
+anscombe2 <- anscombe %>%
+    mutate(obs = row_number()) %>%
+    gather(variable_dataset, value, - obs) %>%
+    separate(variable_dataset, c("variable", "dataset"), sep = 1L) %>%
+    spread(variable, value) %>%
+    arrange(dataset, obs)
+```
+
+**a)**
+```{r}
+anscombe2 %>% 
+  group_by(dataset) %>% 
+  summarise(meanx = mean(x), 
+            meany = mean(y), 
+            cor = cor(x, y))
+
+anscombe2 %>% 
+  group_by(dataset) %>% 
+  do(tidy(lm(y ~ x, .)))
+```
+
+**b)**
+```{r}
+ggplot(anscombe2, aes(x = x, y = y)) + 
+  geom_point() + 
+  geom_smooth(method = lm, se = FALSE) + 
+  facet_wrap(~dataset)
+```
+
+#3.
+```{r}
 sprinters <- read.csv("sprinters.csv")
-#a
-library(dplyr)  
-sprinters_orig <- sprinters %>% filter(year < 2004)  
-lm1 <- lm(time ~ year + women, data = sprinters_orig)  
-lm2 <- lm(time ~ year * women, data = sprinters_orig)  
-lm3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))  
-lm4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0))  
+```
+
+**a)**
+```{r}
+sprinters_orig <- sprinters %>% 
+                    filter(year <= 2004, 
+                           olympics == 1)
+```
+
+**b)**
+```{r}
+mod1 <- lm(time ~ year + women, data = sprinters_orig)  
+mod2 <- lm(time ~ year * women, data = sprinters_orig)  
+mod3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))  
+mod4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0))
+```
 
 lm1 shows that as time goes on (year increases), the sprint times have gone down overall. Also
 women were approximately 1 second slower than men in their times.  
+
 lm2 shows, like lm1, that as year increases, the sprint times descrease. Also, when accounting for
 the fact that year and women are correlated, it seems that women are 11 seconds slower than men in
 their sprint times.  
-lm3 shows the regression coefficients for sprint times in terms of year for women only. Women times are decreasing by 0.01584 per year.  
+
+lm3 shows the regression coefficients for sprint times in terms of year for women only. Women times are decreasing by 0.01682 per year.  
+
 lm4 shows the regression coefficients for sprint times in terms of year for men only. Men's times
-are decreasing  by -0.1068. Since the women's times are decreasing at a faster rate, they could, in time, become less than men's times, i.e. run faster than men. I don't think it is fair to extrapolate so far into the future though.  
+are decreasing  by -0.01101. Since the women's times are decreasing at a faster rate, they could, in time, become less than men's times, i.e. run faster than men. I do not necessarily think it is fair to extrapolate so far into the future though.  
+
+```{r, results='asis'}
+htmlreg(list(mod1, mod2, mod3, mod4), stars = numeric(),
+        caption = "Trends in Winning Times in the Olympic 100-meter dash, 1896-2004")
+```
+
+**c)**
+```{r}
+mod_lists <- list(mod1, mod2, mod3, mod4)
+mod_results <- NULL
+for (i in 1:length(mod_lists)) {
+  model <- mod_lists[[i]]
+  data <- model$model
+  actual_values <- data$time
+  predicted_values <- model$fitted.values
+  res <- data.frame(actual = actual_values,
+                    predicted = predicted_values,
+                    model = i)
+      if (is.null(mod_results)) {
+        mod_results <- res
+        }
+      else { 
+        mod_results <- rbind(mod_results, res)
+      }
+}
+
+ggplot(mod_results, aes(x = actual, y = predicted)) + geom_point() + geom_smooth(method = lm, se = FALSE)
+```
+
+**d)**
+```{r}
+yearnew <- data.frame(women = c(1,0),
+                      year = c(2156, 2156))
+                      
+predict(mod1, newdata = yearnew)
+predict(mod2, newdata = yearnew)
+```
+According to mod1, women will still be slower than men, according to mod2, women will be faster.
+
+**e)**
+```{r}
+sqrt(mean((mod2$residuals)^2))
+
+
+yearsnew <- data.frame(women = c(1,0), year = c(2005, 2007, 2008, 2009, 2011, 2012, 2013, 2015))
+post2004 <- predict(mod2, newdata=yearsnew)
+#I could not figure out to find the second set of residuals -- ?
+```
