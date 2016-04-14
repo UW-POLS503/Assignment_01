@@ -238,8 +238,7 @@ ggplot(anscombe2, aes(x, y)) +
 ####a. Create the new dataset named `sprinters_orig` with observations only from plympics.
 
 ```{r, echo=FALSE,include=FALSE}
-require(RCurl)
-sprinters<-read.csv(text=getURL("https://raw.githubusercontent.com/UW-POLS503/Assignment_01/master/sprinters.csv"), header=T)
+sprinters <- read.csv("sprinters.csv")
 ```
 
 ```{r, include=FALSE}
