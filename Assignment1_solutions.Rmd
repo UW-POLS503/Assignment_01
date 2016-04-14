@@ -2,31 +2,235 @@
 title: "Assignment1_Solutions"
 author: "Beatrice Magistro"
 date: "April 7, 2016"
-output: html_document
+output: pdf_document
 ---
+# Problem 1
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r, results='hide'}
+# a.
+democracy <- read.csv("democracy.csv", stringsAsFactors = FALSE, na.strings=".")
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+```
+```{r, results='hide'}
+# b.
+dem_by_variable <- 
+  democracy %>%
+  gather(variable, value, -COUNTRY, -YEAR, -REGION, -CTYNAME)
+dem_by_variable
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+dem_summary_stats <- dem_by_variable %>%
+  group_by(variable, CTYNAME) %>%
+  summarise(mean = mean(value),
+            median = median(value)) %>%
+  gather(stat, value, -CTYNAME, -variable) %>%
+  ungroup() %>%
+  unite(variable_stat, variable, stat) %>%
+  spread(variable_stat, value)
+```
+```{r, results='asis'}
+#c.
+kable(dem_summary_stats)
+```
+
 ```{r}
+#d.
+ggplot(democracy, aes(x=POLLIB))+geom_histogram()
+```
+
+```{r}
+#e.
+ggplot(democracy, aes(x=GDPW))+geom_histogram()
+```
+
+```{r}
+#f.
+ggplot(democracy, aes(x=log(GDPW)))+geom_histogram()
+```
+
+```{r}
+#g.
+ggplot(democracy, aes(x=GDPW, y=POLLIB))+geom_jitter(width=0.5, height=0.2)
+```
+
+```{r}
+#i.
+ggplot(democracy, aes(x=log(GDPW), y=POLLIB))+geom_jitter(width=1, height=0.5)
+```
+
+```{r}
+#j.
+ggplot(democracy, aes(x=factor(OIL), y=log(GDPW)))+geom_boxplot()
+```
+
+```{r}
+#k
+demcath <- democracy %>%
+  filter(CATH>40) %>%
+  mutate(meangdpcath=mean(GDPW, na.rm=T))
+unique(demcath$meangdpcath)
+demall <- democracy %>%
+  mutate(meangdp=mean(GDPW, na.rm=T))
+unique(demall$meangdp)
+# GDP per capita is higher in countries where at least 40% of the population is Catholic.
+```
+
+```{r}
+#l1
+demfrac <- democracy %>%
+  filter(ELF60>0.60) %>%
+  mutate(meangdpfrac=mean(GDPW, na.rm=T))
+unique(demfrac$meangdpfrac)
+```
+
+```{r}
+#l2
+demnofrac <- democracy %>%
+  filter(ELF60<0.60) %>%
+  mutate(meangdpnofrac=mean(GDPW, na.rm=T))
+unique(demnofrac$meangdpnofrac)
+```
+
+```{r}
+#l3 
+demnafrac <- democracy %>%
+  filter(ELF60=NA) %>%
+  mutate(meangdpnafrac=mean(GDPW))
+unique(demnafrac$meangdpnafrac)
+```
+
+```{r}
+#m
+educ <-democracy %>% 
+  group_by(YEAR) %>% 
+  summarise(medianEDT = median(EDT, na.rm=T)) %>% 
+  arrange(YEAR)
+ggplot(educ, aes(x=medianEDT, y=YEAR))+geom_line()
+```
+
+```{r}
+#o
+educ2 <-democracy %>% 
+  group_by(REG, YEAR) %>% 
+  summarise(medianEDT = median(EDT, na.rm=T)) %>% 
+  arrange(REG)
+  
+ggplot(educ2, aes(x=YEAR, y=medianEDT, col=factor(REG)))+geom_point()+geom_smooth(method="lm")
+```
+```{r}
+#n 
+median <- democracy %>%
+  filter(YEAR == 1985, !is.na(EDT)) %>%
+  arrange(EDT) %>%
+  slice(113/2)
+median
+```
+
+```{r}
+#q 
+percentiles <- 
+  democracy %>%
+  group_by(NEWC) %>%
+  summarize(ELF60_p25 = quantile(ELF60, probs = .25, na.rm = T),
+            ELF60_p75 = quantile(ELF60, probs = .75, na.rm = T))
+
+kable(percentiles, format = "markdown")
+```
+
+```{r}
+#Problem 2
+data("anscombe")
+library("dplyr")
+library("tidyr")
+anscombe2 <- anscombe %>%
+    mutate(obs = row_number()) %>%
+    gather(variable_dataset, value, - obs) %>%
+    separate(variable_dataset, c("variable", "dataset"), sep = 1L) %>%
+    spread(variable, value) %>%
+    arrange(dataset, obs)
+```
+
+```{r}
+#a.
+anscombe2 %>%
+  group_by(dataset) %>%
+  summarize(meanx=mean(x, na.rm=TRUE),
+            meany=mean(y, na.rm=TRUE),
+            sdx=sd(x, na.rm = TRUE),
+            sdy = sd(y, na.rm=TRUE),
+            cor_xy=cor(x, y))
+mod1 <- lm(x~y, data=filter(anscombe2, dataset==1))
+mod1
+mod2 <- lm(x~y, data=filter(anscombe2, dataset==2))
+mod2
+mod3 <- lm(x~y, data=filter(anscombe2, dataset==3))
+mod3
+mod4 <- lm(x~y, data=filter(anscombe2, dataset==4))
+mod4
+
+#b
+
+plot1 <- ggplot(aes(x=x, y=y),
+                data=filter(anscombe2, dataset==1))+
+  geom_point()+
+  geom_smooth(method="lm")
+plot1
+plot2 <- ggplot(aes(x=x, y=y),
+                data=filter(anscombe2, dataset==2))+
+  geom_point()+
+  geom_smooth(method="lm")
+plot2
+plot3 <- ggplot(aes(x=x, y=y),
+                data=filter(anscombe2, dataset==3))+
+  geom_point()+
+  geom_smooth(method="lm")
+plot3
+plot4 <- ggplot(aes(x=x, y=y),
+                data=filter(anscombe2, dataset==4))+
+  geom_point()+
+  geom_smooth(method="lm")
+plot4
+```
+
+```{r}
+# Problem 3
 sprinters <- read.csv("sprinters.csv")
 ```
 
 ```{r}
+#a.
 sprinters_orig <- sprinters[sprinters$year<2005,]
-sprinters_orig <- filter(sprinters, year<2005)
+library(dplyr)
+sprinters_orig <- filter(sprinters, year<2005, olympics==1)
 ```
 ```{r, eval = FALSE} 
-lm(time ~ year + women, data = sprinters_orig) 
-lm(time ~ year * women, data = sprinters_orig) 
-lm(time ~ year, data = filter(sprinters_orig, women == 1)) 
-lm(time ~ year, data = filter(sprinters_orig, women == 0)) 
+#b.
+reg1 <- lm(time ~ year + women, data = sprinters_orig) 
+reg2 <- lm(time ~ year * women, data = sprinters_orig) 
+reg3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1)) 
+reg4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0)) 
 ```
-
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
+```{r,eval=FALSE, results='asis'}
+library(texreg)
+htmlreg(list(reg1, reg2, reg3, reg4), stars = numeric(),
+        caption="Trends in Winning Times in the Olympic 100-meter dash, 1896-2004")
 ```
+```{r}
+#c
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+data2 <- data.frame(actual=reg1$model$time, predicted=reg1$fitted.values)
+
+regs_plot <- ggplot(data2, aes(x=actual, y= predicted))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+regs_plot
+```
+```{r}
+#d
+yearnew <- data.frame(women=c(1,0),
+                      year=2156)
+predict(reg1, newdata=yearnew)
+```
