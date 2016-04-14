@@ -1,0 +1,383 @@
+# POLS 503, Spring 2016: Assignment 1
+##Xingwei Wu
+
+### Problem 1: Data Wrangling and Viz Refresher \n
+
+```{r, echo=FALSE,include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+democracy <- read.csv(file = "democracy.csv", stringsAsFactors = FALSE,na.strings = ".")
+```
+
+####
+```{r,warning=FALSE,echo=TRUE,results='asis',message=FALSE}
+democracy_by_variable <-
+   democracy %>%
+   gather(variable,value,-COUNTRY, -CTYNAME, -REGION, -YEAR)
+summary<-democracy_by_variable%>%
+  na.omit() %>%
+  group_by(variable) %>%
+  summarise(min=min(value),
+            mean = mean(value),
+            sd = sd(value),
+            max = max(value))
+knitr::kable(summary,format="html",align="c")
+```
+#### d. Histogram for political liberties \n
+```{r,warning=FALSE,fig.width=4.8, fig.height=3.6,echo=TRUE,results='asis',message=FALSE}
+ggplot(democracy,
+       aes(x = POLLIB)) +
+       geom_histogram(binwidth=.5) +
+       ggtitle("Fig 1: Histogram for political liberties")+
+       theme_bw()+
+       theme(text=element_text(size=10),
+       axis.title=element_text(size=10),
+       legend.position="bottom",
+       legend.text=element_text(size=10))
+```
+
+#### e. Histogram for GDP per capita \n
+```{r,warning=FALSE,fig.width=4.8, fig.height=3.6,echo=TRUE,results='asis',message=FALSE}
+ggplot(democracy,
+       aes(x = GDPW)) +
+       geom_histogram(binwidth = 1000) +
+       ggtitle("Fig 2: Histogram for GDP per capita")+
+       theme_bw()+
+       theme(text=element_text(size=10),
+       axis.title=element_text(size=10),
+       legend.position="bottom",
+       legend.text=element_text(size=10))
+```
+ 
+#### f. Histogram for log GDP per capita \n
+```{r,warning=FALSE,fig.width=4.8, fig.height=3.6,echo=TRUE,results='asis',message=FALSE}
+ggplot(democracy,
+       aes(x = log(GDPW)))+
+       geom_histogram() +
+       ggtitle("Fig 3: Histogram for log GDP per capita")+
+       theme_bw()+
+       theme(text=element_text(size=10),
+       axis.title=element_text(size=10),
+       legend.position="bottom",
+       legend.text=element_text(size=10))
+```
+
+#### g.Plot political liberties against GDP per capita \n
+```{r,warning=FALSE,fig.width=4.8, fig.height=3.6,echo=TRUE,results='asis',message=FALSE}
+ggplot(democracy,aes(POLLIB, GDPW))+
+  geom_point(position = position_jitter(width = 0.5),alpha=0.35,size=2)+
+  ggtitle("Fig 4: political liberties vs.GDP per capita")+
+  theme_bw()+
+  theme(text=element_text(size=10),
+        axis.title=element_text(size=10),
+        legend.position="bottom",
+        legend.text=element_text(size=10))
+```
+
+#### i.Plot political liberties against log GDP per capita \n
+```{r,warning=FALSE,fig.width=4.8,fig.height=3.6,echo=TRUE,results='asis',message=FALSE}
+ggplot(democracy,aes(POLLIB, log(GDPW)))+
+  geom_point(position = position_jitter(width = 0.5),alpha=0.35,size=2)+
+  ggtitle("Fig 5: political liberties vs.GDP per capita")+
+  theme_bw()+
+  theme(text=element_text(size=10),
+        axis.title=element_text(size=10),
+        legend.position="bottom",
+        legend.text=element_text(size=10))
+```
+
+#### j.Boxplot of GDP per capita for oil producing and non-oil producing nations \n
+```{r,warning=FALSE,fig.width=4.8,fig.height=3.6,echo=TRUE,results='asis',message=FALSE}
+democracy$OIL<-factor(democracy$OIL,levels=c("0","1"),labels=c("oil producing","non-oil producing"))
+ggplot(democracy,aes(OIL, GDPW))+
+  geom_boxplot()+
+  ggtitle("Fig 6: GDP per capita for oil producing & non-oil producing nations")+
+  theme_bw()+
+  xlab("country")+
+  theme(text=element_text(size=10),
+        axis.title=element_text(size=10),
+        legend.position="bottom",
+        legend.text=element_text(size=10))
+```
+
+#### k.Mean GDP per capita in countries with at least 40 percent Catholics and all countries \n
+```{r,warning=FALSE,fig.width=4.8,fig.height=3.6,echo=TRUE,message=FALSE}
+library(dplyr)
+knitr::kable(list(summarize(democracy,
+            GDP_mean_all=mean(GDPW)),
+            summarize(filter(democracy,CATH>=40),
+            GDP_mean_40=mean(GDPW))),format="html",align="c")
+```
+
+#### l. Average GDP per capita in countries with different ethnolinguistic fractionalization group \n
+```{r,warning=FALSE,fig.width=4.8,fig.height=3.6,echo=TRUE,message=FALSE}  
+democracynew<- mutate(democracy,Country_ELF60 = ifelse(is.na(ELF60)==TRUE,"Missing", ifelse(ELF60<0.6,"Less than 60%","Greater than 60%")))
+knitr::kable(democracynew%>%
+  group_by(Country_ELF60)%>%
+  summarize(GDP_mean=mean(GDPW)),format="html",align="c")
+```
+
+#### m. Median average years of education for all years
+```{r,results="asis",warning=FALSE,fig.width=4.8,fig.height=3.6,echo=TRUE,message=FALSE} 
+EDT_median1<-democracy%>%
+  group_by(YEAR)%>%
+  filter(is.na(EDT)==F) %>%
+  summarize(EDT_median=median(EDT))
+knitr::kable(head(EDT_median1),format="html",align="c")
+
+ggplot(democracy, aes(YEAR, EDT)) + 
+  geom_point(alpha=0.3,na.rm = FALSE)+
+  stat_summary(fun.y = median, geom="line",colour="red")+
+  xlim(c(1955,1990))+
+  ggtitle("Fig 7: Median average years of education ")+
+  theme_bw()+
+  theme(text=element_text(size=12),
+        axis.title=element_text(size=10))
+```
+
+#### o. Median average years of education group by both year and democracy \n
+```{r,warning=FALSE,fig.width=6.5,fig.height=3.6,echo=TRUE,message=FALSE} 
+EDT_median2<-democracy%>%
+  group_by(YEAR,REG)%>%
+  filter(is.na(EDT)==F) %>%
+  summarize(EDT_median=median(EDT))
+knitr::kable(head(EDT_median2),format="html",align="c")
+
+ggplot(democracy, aes(YEAR,EDT)) +
+  aes(colour = factor(REG))+
+  geom_point(alpha=0.5) +
+  stat_summary(fun.y = median, geom="line")+
+  scale_color_manual("REG\n",labels = c("democracies", "non-democracies"),values = c("blue", "red"))+
+  xlim(c(1955,1990))+
+  theme_bw()+
+  ggtitle("Fig 8: Average education years for democracies vs.non-democracies")+
+  theme(text=element_text(size=10),
+        axis.title=element_text(size=10),
+        legend.position="right",
+        legend.text=element_text(size=8))
+```
+
+#### n. Country closest to the median years of education in 1985 \n
+```{r,warning=FALSE,echo=TRUE,message=FALSE} 
+democracy_1985<-democracy%>%
+  filter(YEAR==1985&is.na(EDT)==F)%>%
+  mutate(Difference = abs(EDT-median(EDT)))
+
+Unique<-democracy_1985%>%
+  arrange(Difference)%>%
+  slice(1)
+print(c(Unique$CTYNAME,Unique$EDT))
+```
+
+#### q. Country closest to the median years of education in 1985 \n
+```{r,warning=FALSE,echo=TRUE,message=FALSE,results="asis"} 
+ELF60_p2575<-democracynew%>%
+  filter(is.na(ELF60)==F)%>%
+  group_by(NEWC)%>%
+  summarize(ELF60_p25=quantile(ELF60,0.25),
+            ELF60_p75=quantile(ELF60,0.75))
+knitr::kable(ELF60_p2575,format = "html",align="c")
+```
+
+
+### Problem 2: Plotting data and regressions
+
+#### a. Statistic summary of x and y in each dataset
+```{r,include=FALSE}
+data("anscombe")
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(broom)
+```
+```{r,results="asis"}
+anscombe2 <- anscombe %>%
+    mutate(obs = row_number()) %>%
+    gather(variable_dataset, value, - obs) %>%
+    separate(variable_dataset, c("variable", "dataset"), sep = 1L) %>%
+    spread(variable, value) %>%
+    arrange(dataset, obs)
+
+options(digits = 3)
+summaryxy<-anscombe2 %>%
+  group_by(dataset) %>%
+  summarise(x_mean = mean(x),
+            x_sd = sd(x),
+            y_mean = mean(y),
+            y_sd = sd (y),
+            xy_correlation=cor(x,y))
+knitr::kable(summaryxy,align = 'c')
+
+regressionxy<-anscombe2%>%
+   group_by(dataset) %>%
+   do(tidy(lm(.$y ~ .$x)))
+knitr::kable(regressionxy,align = 'c')
+```
+
+These four dataset have almost the same means and standard deviations of x and y, and correlation coefficients between x and y.
+
+#### b. Scatter plots of each dataset and its linear regression fits
+```{r,warning=FALSE,fig.width=6,fig.height=4,echo=TRUE,message=FALSE} 
+ggplot(anscombe2, aes(x, y)) +
+  geom_point() +
+  geom_smooth(method="lm") +
+  facet_wrap(~ dataset,2,2)+
+  ggtitle("Model 3: Scatter plots of each dataset and its linear regression fits")+
+  theme_bw()+
+  theme(text=element_text(size=10),
+        axis.title=element_text(size=10),
+        legend.position="bottom",
+        legend.text=element_text(size=10))
+```
+
+
+
+### Problem 3: Predicting Sprint Times
+####a. Create the new dataset named `sprinters_orig` with observations only from plympics.
+
+```{r, echo=FALSE,include=FALSE}
+require(RCurl)
+sprinters<-read.csv(text=getURL("https://raw.githubusercontent.com/UW-POLS503/Assignment_01/master/sprinters.csv"), header=T)
+```
+
+```{r, include=FALSE}
+library("dplyr")
+```
+```{r}
+sprinters_orig <-filter(sprinters,year <= 2004,olympics== 1)
+```
+
+
+#### b. Run the regressions
+
+```{r}
+mod1 <- lm(time ~ year + women, data = sprinters_orig)
+mod2 <- lm(time ~ year * women, data = sprinters_orig)
+mod3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))
+mod4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0))
+```
+
+
+```{r, echo=FALSE,include=FALSE,}
+library(memisc)
+library(pander)
+mtable1234 <- mtable('Model 1' = mod1,
+                    'Model 2' = mod2,
+                    'Model 3' = mod3,
+                    'Model 4' = mod4,
+                    summary.stats = c('R-squared','F','p','N'))
+```
+```{r}
+#panderOptions('round', 2)
+#panderOptions('digits', 2)
+#panderOptions('keep.trailing.zeros', TRUE)
+#pander(mtable1234)
+```
+The model results are compiled and listed in the following table.
+```{r, echo=FALSE,include=FALSE}
+library(texreg)
+```
+```{r, results = 'asis'}
+htmlreg(list(mod1, mod2, mod3, mod4), caption = "Trends in Winning Times in the Olympic 100-meter dash, 1896-2004",center = FALSE, caption.above = TRUE,vertical.align.px = 0)
+```
+
+* Model 1: Winning times in the Olympic 100-meter dash would decrease by 0.01 seconds as the year increases 1. For the same year, compared to men, winning time of women would decrease by 1.09.
+The slop in this regession for women and men is the same: -0.01. 
+
+* Model 2: As the year increases by 1, winning times in the Olympic 100-meter dash would decrease by 0.01 seconds for men but decrease by (0.01+0.01)=0.02 seconds for women. For the same year, winning time of women would increase by (12.52-0.01*year) seconds compared to that of men.
+The slop in this regression for men is -0.01. But the slop for women (absolute value) is increasing as year increase -0.02.
+
+* Model 3: For female player, winning times in the Olympic 100-meter dash would decrease by 0.02 seconds as the year increases by 1.
+The slope of the regression （for women) is constant -0.02, which is as same as in Model 2, but different from that in Model 1.
+
+* Model 4: For male player, winning times in the Olympic 100-meter dash would decrease by 0.01 seconds each year.
+The slope of the regression （for men) is constant -0.01, which is as same as in Model 1 and Model 2.
+
+
+c. Plot the fitted values of these regressions against the original values.
+```{r, echo=FALSE,include=FALSE}
+library(broom)
+library(ggplot2)
+new_Pre1 <- augment(mod1)
+new_Pre2 <- augment(mod2)
+new_Pre3 <- augment(mod3)
+new_Pre4 <- augment(mod4)
+```
+```{r,results="asis",warning=FALSE,fig.width=4.8,fig.height=3.6,echo=TRUE,message=FALSE} 
+#Model 1:
+ggplot(new_Pre1, aes(x = year)) +
+  geom_point(aes(y = time,colour=factor(women))) +
+  geom_line(aes(y = .fitted,colour=factor(women)))+
+  scale_color_manual("Gender",labels = c("men", "women"),values = c("blue", "red"))+
+  ggtitle("Model 1: fitted values vs. original values")+
+  theme_bw()+
+  theme(text=element_text(size=12),
+        axis.title=element_text(size=10),
+        legend.position="bottom",
+        legend.text=element_text(size=10))
+```
+```{r, echo=FALSE,include=FALSE,}
+# 4 Models:
+new_Pre1$Model<-rep(1,42)
+new_Pre2$Model<-rep(2,42)
+new_Pre3$Model<-rep(3,18)
+new_Pre3$women<-rep(1,18)
+new_Pre4$Model<-rep(4,24)
+new_Pre4$women<-rep(0,24)
+models<-rbind(new_Pre1,new_Pre2,new_Pre3,new_Pre4)
+```
+```{r,results="asis",warning=FALSE,fig.width=4.8,fig.height=3.6,echo=TRUE,message=FALSE} 
+ggplot(models, aes(x = year)) +
+  facet_wrap(~Model)+
+  geom_point(aes(y = time,colour=factor(women))) +
+  geom_line(aes(y = .fitted,colour=factor(women)))+
+  scale_color_manual("Gender",labels = c("men", "women"),values = c("blue", "red"))+
+  ggtitle("Fig: Fitted values vs. original values for each model")+
+  theme_bw()+
+  theme(text=element_text(size=12),
+        axis.title=element_text(size=10),
+        legend.position="bottom",
+        legend.text=element_text(size=10))
+```
+
+d. Predict the times of men and women in the 2156 Olympics. 
+The predicted winning times of 100 meter sprint for the 2156 Olympics based on above models are:
+* Model 1: 7.77 seconds for male with a 95% confidence interval [7.36, 8.19];  8.87 seconds for female, with a 95% confidence interval [8.48, 9.26]. 
+* Model 2: 8.10 seconds for male with a 95% confidence interval [7.65, 8.55];  8.08 seconds for female, with a 95% confidence interval [7.40, 8.75]. 
+* Model 3: 8.08 seconds for male with a 95% confidence interval [7.21, 8.95]
+* Model 4: 8.10 seconds for female, with a 95% confidence interval [7.73, 8.46]. 
+
+```{r}
+new<-list(year=rep(2156,2),women=c(0,1))
+#Model 1:
+predict(mod1,newdata=new,interval = "confidence")
+#Model 2:
+predict(mod2,newdata=new,interval = "confidence")
+#Model 3:
+predict(mod3,list(year=2156,women=1),interval = "confidence")
+#Model 4:
+predict(mod4,list(year=2156,women=0),interval = "confidence")
+```
+I don’t think these prediction are plausible. These models have fairly high R-squares and small standard errors for residuals, suggesting that they fits the data well. That is, they have good predictions for winning times of 100 meter sprint between 1900 and 2004. However, it's assumed that there’s a stable decrease of wining time over time if using these models to predict the wining time in future Olympics. If this is the case, the wining time for females will drop below 0 seconds from the year of 2620, which certainly cannot be true. The problem is that, we assume a linear relationship between year and finishing time based on a relatively short period of time (1900 to 2004). Nonetheless, this assumption may not hold in a long period of time in the future. Besides, as this data were collected over time, a serial correlation may exist and lead to inefficient estimates of β and incorrect standard errors.
+
+e.RMSE caculation
+* The RMSE for the regression time ~ year * women (Olympics before 2004) is 0.16
+```{r}
+## Model 2: time ~ year * women
+RMSE_Before <- sqrt(mean((new_Pre2$time-new_Pre2$.fitted)^2))
+print(RMSE_Before)
+```
+* The RMSE for the predictions of the years after 2004 for both Olympics and World Championships is 0.23.
+```{r, include=FALSE}
+library("dplyr")
+```
+```{r}
+after2004<-filter(sprinters,year > 2004)
+after2004$predictions<-predict(mod2,list(year=after2004$year,women=after2004$women))
+RMSE_After <- sqrt(mean((after2004$predictions-after2004$time)^2))
+print(RMSE_After)
+```
+Compared to the estimation period, we have a much samller sample of data after 2004 (out-of-sample). Hence, it is possible that a model may do unusually well or badly in this validation or out-of-sample testing period merely by virtue of getting lucky or unlucky--e.g., by making the right guess about an unforeseeable upturn or downturn in the near future, or by being less sensitive than other models to an unusual event that happens at the start of the validation period.
+
