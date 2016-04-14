@@ -21,7 +21,7 @@ democracy <- read.csv(file = "democracy.csv", stringsAsFactors = FALSE, na.strin
 
 a. Create a data frame with statistics (minimum, mean, sd, and maximum) for all variables but COUNTRY, CTYNAME, REGION, and YEAR.
 
-```{r warning = F, message = F, tidy = T}
+```{r warning = F, message = F, tidy = T, results = 'asis'}
 dem_by_variable <- 
   democracy %>%
   gather(variable, value, -COUNTRY, -CTYNAME, -REGION, -YEAR)
@@ -36,6 +36,8 @@ dem_summary_stats <-
   gather(stat, value, -variable) %>%
   ungroup() %>%
   spread(stat, value)
+
+kable(dem_summary_stats)
 ```
 
 d. Create a histogram for political liberties in which each unique value of the variable is in its own bin.
@@ -159,7 +161,32 @@ kable(percentiles, format = "markdown")
 Problem 2
 
 ```{r echo = F, warning = F, message = F}
+data("anscombe")
 
+anscombe2 <- anscombe %>%
+    mutate(obs = row_number()) %>%
+    gather(variable_dataset, value, - obs) %>%
+    separate(variable_dataset, c("variable", "dataset"), sep = 1L) %>%
+    spread(variable, value) %>%
+    arrange(dataset, obs)
+```
+
+a. For each dataset: calculate the mean and standard deviations of x and y, and correlation between x and y, and run a linear regression between x and y for each dataset. How similar do you think that these datasets will look?
+
+```{r}
+anscombe2 %>%
+  group_by(dataset) %>%
+  summarize(mean_x = mean(x, na.rm = T),
+            mean_y = mean(y, na.rm = T),
+            corr_x_y = cor(x, y))
+```
+
+I do not expect these datasets to look similar except for their slope, since all correlation is on a scale of -1 to 1.
+
+b. Create a scatter plot of each dataset and its linear regression fit. Hint: you can do this easily with facet_wrap.
+
+```{r}
+ggplot(anscombe2, aes(x = x, y = y)) + geom_point() + geom_smooth(method = "lm") + facet_wrap(~ dataset)
 ```
 
 
@@ -227,9 +254,24 @@ ggplot(reg_4, aes(x = year)) +
 
 years <- c(2156)
 coef(reg_1)['(Intercept)'] + coef(reg_1)['year'] * years
-# predict(reg_1, year = 2156)
+predict(reg_2, newdata = data.frame(year = 2156, women = c(0, 1)))
 ```
 
 d. Use the function predict to predict the times of men and women in the 2156 Olympics. Is this plausible?
 
+Men - 8.098
+Women - 8.079
 
+Seems implausible due to body type between sexes. I would expect the coeffient for women's times to level off before 2156 and parallel the men's coefficient.
+
+e. Calculate the square root of the mean of the squared residuals (root mean squared error or RMSE) for the regression time ~ year * women. Predict the values for the years after 2004 for both Olympics and World Championships. What are the root mean squared residuals for these predictions? Is it surprising that the RMSE for the predictions out of the sample are lower than those in the sample? 
+
+```{r}
+reg_5 <- lm(time ~ year * women, sprinters)
+reg_5aug <- augment(reg_5)
+sqrt(sum(reg_5aug$.resid, na.rm = T)^2)
+```
+
+It is not surprising that the MSE for our predictions is lower than the MSE for the regression line, because any values after 2004 have residuals of 0 because they were predicted by our regression line.
+
+I'm not sure how to actually calculate the MSE for our predictions, and I can't do any more at this point because I have become very sick.
