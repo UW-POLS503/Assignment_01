@@ -16,7 +16,8 @@ library(broom)
 library(knitr)
 ```
 
-## A. Read in democracy using the readr function read_csv. I need to use the argument na="." because missing values are recorded as "."
+## A. 
+Read in democracy using the readr function read_csv. I need to use the argument na="." because missing values are recorded as "."
 
 ```{r}
 democracy <- read.csv(file = "democracy.csv", stringsAsFactors = FALSE,
@@ -43,7 +44,8 @@ dem_summary_stats <-
 kable(dem_summary_stats)
 ```
 
-## D. To plot a histogram with each value of POLLIB in its own bin, either adjust the binwidth parameter of geom_histogram or turn POLLIB into a factor.
+## D. 
+To plot a histogram with each value of POLLIB in its own bin, either adjust the binwidth parameter of geom_histogram or turn POLLIB into a factor.
 
 ```{r, fig.width = 4, fig.height = 3, fig.align='center'}
 ggplot(democracy, aes(x = POLLIB)) +
@@ -51,7 +53,8 @@ ggplot(democracy, aes(x = POLLIB)) +
   xlab("Index of Political Liberty")
 ```
 
-## E. A histogram of GDP per capita is
+## E. 
+A histogram of GDP per capita is
 
 ```{r, fig.width = 4, fig.height = 3, fig.align='center'}
 ggplot(democracy, aes(x = GDPW)) +
@@ -59,7 +62,8 @@ ggplot(democracy, aes(x = GDPW)) +
   xlab("GDP per capita")
 ```
 
-## F. A histogram of log GDP per capita is
+## F. 
+A histogram of log GDP per capita is
 
 ```{r, fig.width = 4, fig.height = 3, fig.align='center'}
 ggplot(democracy, aes(x = log(GDPW))) +
@@ -67,7 +71,8 @@ ggplot(democracy, aes(x = log(GDPW))) +
   xlab("GDP per capita")
 ```
 
-## G. Create a scatterplot of political liberties against GDP per capita
+## G. 
+Create a scatterplot of political liberties against GDP per capita
 
 ```{r, fig.width = 4, fig.height = 3, fig.align='center'}
 ggplot(democracy, aes(x = GDPW, y = POLLIB)) +
@@ -85,7 +90,8 @@ ggplot(democracy, aes(x = GDPW, y = POLLIB)) +
   scale_x_continuous("Index of Political Liberty")
 ``` 
 
-## I. Create a scatterplot of political liberties against log GDP per capita
+## I. 
+Create a scatterplot of political liberties against log GDP per capita
 
 ```{r, fig.width = 4, fig.height = 3, fig.align='center'}
 ggplot(democracy, aes(x = log(GDPW), y = POLLIB)) +
@@ -94,7 +100,8 @@ ggplot(democracy, aes(x = log(GDPW), y = POLLIB)) +
   scale_x_continuous("Index of Political Liberty")
 ```
 
-## J. A boxplot of GDP per capita for oil producing and non-oil producing nations is
+## J. 
+A boxplot of GDP per capita for oil producing and non-oil producing nations is
 
 ```{r, fig.width = 4, fig.height = 3, fig.align='center'}
 ggplot(democracy, aes(x = factor(OIL), y = GDPW)) +
@@ -102,7 +109,8 @@ ggplot(democracy, aes(x = factor(OIL), y = GDPW)) +
   scale_x_discrete("Oil Exporter")
 ```
 
-## K. The average GDP per captical of countries at least 40% Catholic countries was 1.2 times higher than those which were less than 40% Catholic.
+## K.
+The average GDP per captical of countries at least 40% Catholic countries was 1.2 times higher than those which were less than 40% Catholic.
 
 ```{r}
 catholic_gdpw <- filter(democracy, CATH > 40)$GDPW %>% mean(na.rm = TRUE)
@@ -112,7 +120,8 @@ all_gdpw
 catholic_gdpw / all_gdpw
 ```
 
-## L. The GDP per capita in countries with greater than 60% ethnolinguistic fractionalization, less than 60%, and missing ethnolinguistic fractionalization is shown in the following table:
+## L. 
+The GDP per capita in countries with greater than 60% ethnolinguistic fractionalization, less than 60%, and missing ethnolinguistic fractionalization is shown in the following table:
 
 ```{r, results = 'asis'}
 elf_summary <- democracy %>%
@@ -122,7 +131,8 @@ elf_summary <- democracy %>%
 kable(elf_summary)
 ```
 
-## M. The median years of education for all countries by year:
+## M. 
+The median years of education for all countries by year:
 
 ```{r}
 ed_year <- democracy %>%
@@ -152,7 +162,8 @@ ggplot(ed_year_dem, aes(x = YEAR, y = ed_mean, col = factor(REG))) +
   geom_line()
 ```
 
-## N. Venezuela was the country closest (in this case, equal) to the median of the average years of education in 1985.
+## N. 
+Venezuela was the country closest (in this case, equal) to the median of the average years of education in 1985.
 
 ```{r}
 democracy %>%
@@ -162,7 +173,8 @@ democracy %>%
   select(CTYNAME, EDT)
 ```
 
-## Q. The 25th and 75th percentiles of the ethnolinguist fractionalization (ELF60) for new and old countries (NEWC) is shown in the table below:
+## Q. 
+The 25th and 75th percentiles of the ethnolinguist fractionalization (ELF60) for new and old countries (NEWC) is shown in the table below:
 
 ```{r}
 dem_elf_tabl <-
@@ -223,7 +235,8 @@ Load the data into R from the csv file:
 sprinters <- read.csv("sprinters.csv")
 ```
 
-## A. The referenced paper only used data from the Olympics 2004 and before. Create a new dataset named sprinters_orig with only those observations.
+## A. 
+The referenced paper only used data from the Olympics 2004 and before. Create a new dataset named sprinters_orig with only those observations.
 
 ```{r}
 sprinters_orig <-
@@ -232,7 +245,8 @@ sprinters_orig <-
          olympics == 1)
 ```
 
-## B. Run the regressions
+## B. 
+Run the regressions
 
 ```{r}
 library("dplyr")
