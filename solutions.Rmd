@@ -287,7 +287,7 @@ models_data2 <- mutate(models_data2, resid = actual - predicted)
 models_data2 <- mutate(models_data2, sq_resid = resid^2)
 models_data2 %>%
   summarise(rmse = sqrt(mean(sq_resid)))
-```
+``` 
 
 
 
