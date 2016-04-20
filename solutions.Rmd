@@ -1,0 +1,314 @@
+---
+title: "Assignment 1"
+author: "Solutions"
+output: pdf_document
+---
+
+# Problem 1 
+
+Loading packages:
+
+```{r, message = FALSE}
+library(dplyr) 
+library(ggplot2)
+library(tidyr)
+library(broom)
+library(knitr)
+```
+
+## A. 
+Read in democracy using the readr function read_csv. I need to use the argument na="." because missing values are recorded as "."
+
+```{r}
+democracy <- read.csv(file = "democracy.csv", stringsAsFactors = FALSE,
+                      na.strings = ".")
+```
+
+## B.
+
+```{r}
+democracy_by_variable <- 
+  democracy %>%
+  gather(variable, value, -COUNTRY, -CTYNAME, -REGION, -YEAR)
+
+dem_summary_stats <- 
+  democracy_by_variable %>%
+  group_by(variable) %>%
+  summarise(min = min(value, na.rm = TRUE),
+            mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            max = max(value, na.rm =TRUE))
+```
+
+```{r, results = 'asis'}
+kable(dem_summary_stats)
+```
+
+## D. 
+To plot a histogram with each value of POLLIB in its own bin, either adjust the binwidth parameter of geom_histogram or turn POLLIB into a factor.
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(democracy, aes(x = POLLIB)) +
+  geom_histogram(binwidth = 1) +
+  xlab("Index of Political Liberty")
+```
+
+## E. 
+A histogram of GDP per capita is
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(democracy, aes(x = GDPW)) +
+  geom_histogram() +
+  xlab("GDP per capita")
+```
+
+## F. 
+A histogram of log GDP per capita is
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(democracy, aes(x = log(GDPW))) +
+  geom_histogram() +
+  xlab("GDP per capita")
+```
+
+## G. 
+Create a scatterplot of political liberties against GDP per capita
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(democracy, aes(x = GDPW, y = POLLIB)) +
+  geom_point() +
+  ylab("Per capita GDP") +
+  xlab("Index of Political Liberty")
+```
+
+Create the same scatterplot while jittering the points
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(democracy, aes(x = GDPW, y = POLLIB)) +
+  geom_jitter(height = 0.5) +
+  scale_y_continuous("Per capita GDP") +
+  scale_x_continuous("Index of Political Liberty")
+``` 
+
+## I. 
+Create a scatterplot of political liberties against log GDP per capita
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(democracy, aes(x = log(GDPW), y = POLLIB)) +
+  geom_jitter(height = 0.5) +
+  scale_y_continuous("Per capita GDP") +
+  scale_x_continuous("Index of Political Liberty")
+```
+
+## J. 
+A boxplot of GDP per capita for oil producing and non-oil producing nations is
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(democracy, aes(x = factor(OIL), y = GDPW)) +
+  geom_boxplot() +
+  scale_x_discrete("Oil Exporter")
+```
+
+## K.
+The average GDP per captical of countries at least 40% Catholic countries was 1.2 times higher than those which were less than 40% Catholic.
+
+```{r}
+catholic_gdpw <- filter(democracy, CATH > 40)$GDPW %>% mean(na.rm = TRUE)
+catholic_gdpw
+all_gdpw <- mean(democracy$GDPW, na.rm = FALSE)
+all_gdpw
+catholic_gdpw / all_gdpw
+```
+
+## L. 
+The GDP per capita in countries with greater than 60% ethnolinguistic fractionalization, less than 60%, and missing ethnolinguistic fractionalization is shown in the following table:
+
+```{r, results = 'asis'}
+elf_summary <- democracy %>%
+  mutate(high_elf60 = ELF60 > 0.6) %>%
+  group_by(high_elf60) %>%
+  summarise(gdpw_mean = mean(GDPW))
+kable(elf_summary)
+```
+
+## M. 
+The median years of education for all countries by year:
+
+```{r}
+ed_year <- democracy %>%
+  group_by(YEAR) %>%
+  summarize(ed_mean = median(EDT, na.rm = TRUE))
+```
+
+```{r, results = 'asis'}
+kable(ed_year)
+```
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(ed_year, aes(x = YEAR, y = ed_mean)) +
+  geom_line()
+```
+
+## O. 
+
+```{r}
+ed_year_dem <- democracy %>%
+  group_by(YEAR, REG) %>%
+  summarize(ed_mean = median(EDT, na.rm = TRUE))
+```
+
+```{r, fig.width = 4, fig.height = 3, fig.align='center'}
+ggplot(ed_year_dem, aes(x = YEAR, y = ed_mean, col = factor(REG))) +
+  geom_line()
+```
+
+## N. 
+Venezuela was the country closest (in this case, equal) to the median of the average years of education in 1985.
+
+```{r}
+democracy %>%
+  filter(YEAR == 1985, ! is.na(EDT)) %>%
+  mutate(med_edt_diff = abs(EDT - median(EDT))) %>%
+  filter(med_edt_diff == min(med_edt_diff)) %>%
+  select(CTYNAME, EDT)
+```
+
+## Q. 
+The 25th and 75th percentiles of the ethnolinguist fractionalization (ELF60) for new and old countries (NEWC) is shown in the table below:
+
+```{r}
+dem_elf_tabl <-
+democracy %>%
+  filter(! is.na(ELF60)) %>%
+  mutate(`Country Type` = ifelse(as.logical(NEWC), "new", "old")) %>%
+  group_by(`Country Type`) %>%
+  summarise(elf60_p25 = quantile(ELF60, probs = 0.25),
+            elf60_p75 = quantile(ELF60, probs = 0.75))
+kable(dem_elf_tabl)
+```
+
+# Problem 2
+
+```{r}
+data("anscombe")
+anscombe2 <- anscombe %>%
+    mutate(obs = row_number()) %>%
+    gather(variable_dataset, value, - obs) %>%
+    separate(variable_dataset, c("variable", "dataset"), sep = 1L) %>%
+    spread(variable, value) %>%
+    arrange(dataset, obs)
+```
+
+## A.
+
+```{r, results = 'asis'}
+results1 <- anscombe2 %>%
+  group_by(dataset) %>%
+  summarize(mean_x = mean(x, na.rm = TRUE),
+            sd_x = sd(x, na.rm = TRUE),
+            mean_y = mean(y, na.rm = TRUE),
+            sd_y = sd(y, na.rm = TRUE),
+            cor_xy = cor(x,y))
+results2 <- anscombe2 %>%
+  group_by(dataset) %>%
+  do(tidy(lm(y ~ x, data = .))) %>%
+  filter(term == "x") %>%
+  dplyr::select(estimate, std.error)
+all_results <- left_join(results1, results2)
+kable(all_results)
+```
+
+## B.
+
+```{r}
+ggplot(anscombe2, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ dataset)
+```
+
+# Problem 3
+
+Load the data into R from the csv file:
+
+```{r}
+sprinters <- read.csv("sprinters.csv")
+```
+
+## A. 
+The referenced paper only used data from the Olympics 2004 and before. Create a new dataset named sprinters_orig with only those observations.
+
+```{r}
+sprinters_orig <-
+  filter(sprinters,
+         year <= 2004,
+         olympics == 1)
+```
+
+## B. 
+Run the regressions
+
+```{r}
+library("dplyr")
+mod1 <- lm(time ~ year + women, data = sprinters_orig)
+mod2 <- lm(time ~ year * women, data = sprinters_orig)
+mod3 <- lm(time ~ year, data = filter(sprinters_orig, women == 1))
+mod4 <- lm(time ~ year, data = filter(sprinters_orig, women == 0))
+models_list <- list(mod1, mod2, mod3, mod4)
+```
+
+## C.
+```{r}
+models_data <- NULL
+for (i in 1:length(models_list)) {
+  mod <- i
+  model <- models_list[[i]]
+  data <- models_list[[i]]$model
+  augmented_data <- augment(model, data)
+  actual_values <- augmented_data$time
+  predicted_values <- augmented_data$.fitted
+  res <- data.frame(actual = actual_values,
+                    predicted = predicted_values,
+                    model = mod)
+  models_data <- rbind(models_data, res)
+}
+```
+
+```{r}
+ggplot(models_data, aes(x = actual, y = predicted)) +
+  geom_point() +
+  facet_wrap(~ model)
+```
+
+## D.
+```{r}
+sprinters_2156 <- data_frame(year = rep(2156, 2),
+                             women = c(0, 1))
+predict(mod1, newdata = sprinters_2156)
+```
+
+## E.
+
+```{r}
+models_data <- mutate(models_data, resid = actual - predicted)
+models_data <- mutate(models_data, sq_resid = resid^2)
+models_data %>%
+  group_by(model) %>%
+  summarise(rmse = sqrt(mean(sq_resid))) %>%
+  filter(model == 2)
+```
+
+```{r}
+newdata <-
+  filter(sprinters,
+         year >= 2004)
+models_data2 <- data.frame(
+  actual = newdata$time,
+  predicted = predict(mod2, newdata = newdata))
+models_data2 <- mutate(models_data2, resid = actual - predicted)
+models_data2 <- mutate(models_data2, sq_resid = resid^2)
+models_data2 %>%
+  summarise(rmse = sqrt(mean(sq_resid)))
+``` 
+
+
