@@ -1,6 +1,6 @@
 ---
 title: "Assignment 1"
-author: "Andreu Casas (TA)"
+author: "Solutions"
 output: pdf_document
 ---
 
