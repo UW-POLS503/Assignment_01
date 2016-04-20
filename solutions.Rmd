@@ -280,6 +280,14 @@ ggplot(models_data, aes(x = actual, y = predicted)) +
   facet_wrap(~ model)
 ```
 
+## D.
+```{r}
+sprinters_2156 <- data_frame(year = rep(2156, 2),
+                             women = c(0, 1))
+predict(mod1, newdata = sprinters_2156)
+```
+
+## E.
 
 ```{r}
 models_data <- mutate(models_data, resid = actual - predicted)
@@ -302,7 +310,5 @@ models_data2 <- mutate(models_data2, sq_resid = resid^2)
 models_data2 %>%
   summarise(rmse = sqrt(mean(sq_resid)))
 ``` 
-
-
 
 
